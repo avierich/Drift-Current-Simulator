@@ -2,12 +2,27 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-def initElectrons(numElectrons, width, height, vtherm) :
+def initElectrons(numElectrons, width, height, vtherm, polygons) :
 	tempPosition = []
 	tempVelocity = []
 	paths = []
 	for i in range(numElectrons) :
 		# Generate random position
+#		attemptPos = np.array([np.random.uniform(0, width),
+#				np.random.uniform(0, height)]])
+#		isValid = False
+#		while ~isValid :
+#			isValid = True
+#			attemptPos = np.array([np.random.uniform(0, width),
+#						np.random.uniform(0, height)]])
+#			for polygon in polygons :
+#				for wall in polygon :
+#					originToPoint = np.array([attemptPos[0] - wall[0],attemptPos[1] - wall[1]])
+#					wallVec = np.array([wall[2],wall[3]])
+#					if np.dot(originToPoint, wallVec) > 0 :
+#						isValid = False
+					
+
 		tempPosition.append([[np.random.uniform(0, width),
 				np.random.uniform(0, height)]])
 
@@ -34,20 +49,19 @@ def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 
 	mask = (t > 0) * (t < 1) * (u > 0) * (u < 1)
 	compressedMask = np.dot(mask, np.ones((len(mask[0]),1)))
-	
-	# Reflections
-	#print(velocity.shape)
-	#print(np.reshape(wallNorm,(1,len(wallNorm),2,1)))
 
-	#print(np.dot(velocity,np.reshape(wallNorm,(1,len(wallNorm),2))))
-
+	for i in range(0, len(mask)) :
+		for j in range(0, len(mask[0])) :
+			if(mask[i][j] == 1):
+				velocity[i][0] = velocity[i][0] -  2*np.dot(velocity[i][0].reshape(1,2), wallNorm[j][0].reshape((2,1))) * wallNorm[j][0]
 
 	for i in range(0,len(t)) :
 		for j in range(len(t[0])) :
 			if(t[i][j] > 0 and t[i][j] < 1 and u[i][j] > 0 and u[i][j] < 1) :
 				x = position[i][0][0] + velocity[i][0][0] * t[i][j]
 				y = position[i][0][1] + velocity[i][0][1] * t[i][j]
-				plt.plot([x,x], [y,y], 'x',markersize = 12)
+				#plt.plot([x,x], [y,y], 'x',markersize = 12)
+				plt.plot([x,x], [y,y])
 
 	position += velocity
 	for i in range(0,len(position)) :
@@ -62,7 +76,8 @@ def draw(plt, width, height, paths, edges) :
 	for path in paths :
 		plt.plot(path[0], path[1])
 	for edge in edges :
-		plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=2e-9, head_length=5e-9, width = 0.01e-9, fc='k', ec='k')
+		#plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=2e-9, head_length=5e-9, width = 0.01e-9, fc='k', ec='k')
+		plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=0.0, head_length=0.0, width = 0.01e-9, fc='k', ec='k')
 	plt.show()
 
 if __name__ == "__main__" :
@@ -70,9 +85,37 @@ if __name__ == "__main__" :
 
 	width = 200e-9
 	height = 100e-9
-	vtherm = 3e-9
+	vtherm = 0.5e-9
 
-	edges = [[150e-9,80e-9,0.0,-60e-9],[50e-9,80e-9,0.0,-60e-9],[125e-9,20e-9,-50e-9,60e-9]]
+	edges = [[0.0,height,width/3,0.0],
+		[width/3,height,0.0,-height/4],
+		[width/3,3*height/4,width/9,-height/8],
+		[4*width/9,5*height/8,width/9,0.0],
+		[5*width/9,5*height/8,width/9,height/8],
+		[6*width/9,6*height/8,0.0,height/4],
+		[6*width/9,height,width/3,0.0],
+		[width,0.0,-width/3,0.0],
+		[2*width/3,0.0,0.0,height/4],
+		[2*width/3,height/4,-width/9,height/8],
+		[5*width/9,3*height/8,-width/9,0.0],
+		[4*width/9,3*height/8,-width/9,-height/8],
+		[3*width/9,2*height/8,0.0,-height/4],
+		[3*width/9,0.0,-width/3,0.0]]
+
+	polys = [[[0.0,height,width/3,0.0],
+		[width/3,height,0.0,-height/4],
+		[width/3,3*height/4,width/9,-height/8],
+		[4*width/9,5*height/8,width/9,0.0],
+		[5*width/9,5*height/8,width/9,height/8],
+		[6*width/9,6*height/8,0.0,height/4],
+		[6*width/9,height,width/3,0.0]],
+		[[width,0.0,-width/3,0.0],
+		[2*width/3,0.0,0.0,height/4],
+		[2*width/3,height/4,-width/9,height/8],
+		[5*width/9,3*height/8,-width/9,0.0],
+		[4*width/9,3*height/8,-width/9,-height/8],
+		[3*width/9,2*height/8,0.0,-height/4],
+		[3*width/9,0.0,-width/3,0.0]]]
 
 	wallPosTemp = []
 	wallVecTemp = []
@@ -91,7 +134,7 @@ if __name__ == "__main__" :
 
 	wallNorm = np.array(wallNormTemp)
 
-	position, velocity, path = initElectrons(numElectrons, width, height, vtherm)
+	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
 	for i in range(1000) :
 		iterate(plt, position, velocity, wallPos, wallVec, wallNorm, path)
 	draw(plt, width, height, path, edges)
