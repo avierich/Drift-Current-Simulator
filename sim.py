@@ -30,6 +30,7 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 		tempVelocity.append([[vtherm*np.cos(angle),
 				vtherm*np.sin(angle)]])
 
+
 	for i in range(numElectrons) :
 		paths.append([[],[]])
 
@@ -64,14 +65,26 @@ def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 				plt.plot([x,x], [y,y])
 
 	position += velocity
+
+	# Right periodic boundry
+	rightMask = position[:,:,0] > width
+	position[:,:,0] = (1-rightMask) * position[:,:,0] + rightMask * (position[:,:,0] - width)
+	# Left periodic boundry
+	leftMask = position[:,:,0] < 0
+	position[:,:,0] = (1-leftMask) * position[:,:,0] + leftMask * (width + position[:,:,0])
+
 	for i in range(0,len(position)) :
-		path[i][0].append(position[i][0][0])
-		path[i][1].append(position[i][0][1])
+		if ~leftMask[i] and ~rightMask[i]:
+			path[i][0].append(position[i][0][0])
+			path[i][1].append(position[i][0][1])
+		else :
+			path[i][0].append(np.nan)
+			path[i][1].append(np.nan)
 
 def draw(plt, width, height, paths, edges) :
 	ax = plt.gca()
-	ax.set_xlim([0,width])
-	ax.set_ylim([0,height])
+	ax.set_xlim([0-width*0.5,width*1.5])
+	ax.set_ylim([0-height*0.5,height*1.5])
 
 	for path in paths :
 		plt.plot(path[0], path[1])
@@ -81,7 +94,7 @@ def draw(plt, width, height, paths, edges) :
 	plt.show()
 
 if __name__ == "__main__" :
-	numElectrons = 30
+	numElectrons = 10
 
 	width = 200e-9
 	height = 100e-9
