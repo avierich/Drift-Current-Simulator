@@ -6,25 +6,18 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 	tempPosition = []
 	tempVelocity = []
 	paths = []
+
 	for i in range(numElectrons) :
 		# Generate random position
-#		attemptPos = np.array([np.random.uniform(0, width),
-#				np.random.uniform(0, height)]])
-#		isValid = False
-#		while ~isValid :
-#			isValid = True
-#			attemptPos = np.array([np.random.uniform(0, width),
-#						np.random.uniform(0, height)]])
-#			for polygon in polygons :
-#				for wall in polygon :
-#					originToPoint = np.array([attemptPos[0] - wall[0],attemptPos[1] - wall[1]])
-#					wallVec = np.array([wall[2],wall[3]])
-#					if np.dot(originToPoint, wallVec) > 0 :
-#						isValid = False
-					
-
-		tempPosition.append([[np.random.uniform(0, width),
-				np.random.uniform(0, height)]])
+		valid = False
+		while not valid :
+			attemptPos = np.array([np.random.uniform(0, width),
+						np.random.uniform(0, height)])
+			valid = not isPointInPolys(polygons, attemptPos)
+			if valid :
+				tempPosition.append([[attemptPos[0],
+							attemptPos[1]]])
+		
 
 		angle = np.random.uniform(0,2*np.pi)
 		tempVelocity.append([[vtherm*np.cos(angle),
@@ -35,6 +28,20 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 		paths.append([[],[]])
 
 	return np.array(tempPosition), np.array(tempVelocity), paths
+
+def isPointInPolys(polygons, point) :
+	for polygon in polygons :
+		inPoly = True
+		for wall in polygon :
+			originToPoint = np.array([point[0] - wall[0],point[1] - wall[1]])
+			wallVec = np.array([wall[3],-1*wall[2]])
+			if np.dot(originToPoint, wallVec) > 0 :
+				inPoly = False
+				break
+		if inPoly : return True
+	return False
+			
+	
 
 def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 
@@ -94,7 +101,7 @@ def draw(plt, width, height, paths, edges) :
 	plt.show()
 
 if __name__ == "__main__" :
-	numElectrons = 10
+	numElectrons = 20
 
 	width = 200e-9
 	height = 100e-9
@@ -115,20 +122,16 @@ if __name__ == "__main__" :
 		[3*width/9,2*height/8,0.0,-height/4],
 		[3*width/9,0.0,-width/3,0.0]]
 
-	polys = [[[0.0,height,width/3,0.0],
-		[width/3,height,0.0,-height/4],
+	polys = [[[width/3,height,0.0,-height/4],
 		[width/3,3*height/4,width/9,-height/8],
 		[4*width/9,5*height/8,width/9,0.0],
 		[5*width/9,5*height/8,width/9,height/8],
-		[6*width/9,6*height/8,0.0,height/4],
-		[6*width/9,height,width/3,0.0]],
-		[[width,0.0,-width/3,0.0],
-		[2*width/3,0.0,0.0,height/4],
+		[6*width/9,6*height/8,0.0,height/4]],
+		[[2*width/3,0.0,0.0,height/4],
 		[2*width/3,height/4,-width/9,height/8],
 		[5*width/9,3*height/8,-width/9,0.0],
 		[4*width/9,3*height/8,-width/9,-height/8],
-		[3*width/9,2*height/8,0.0,-height/4],
-		[3*width/9,0.0,-width/3,0.0]]]
+		[3*width/9,2*height/8,0.0,-height/4]]]
 
 	wallPosTemp = []
 	wallVecTemp = []
