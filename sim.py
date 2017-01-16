@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+import shapes
 
 
 def initElectrons(numElectrons, width, height, vtherm, polygons) :
@@ -29,6 +30,7 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 
 	return np.array(tempPosition), np.array(tempVelocity), paths
 
+# This function checks if a given point lies in any of the given polygons
 def isPointInPolys(polygons, point) :
 	for polygon in polygons :
 		inPoly = True
@@ -88,6 +90,14 @@ def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 			path[i][0].append(np.nan)
 			path[i][1].append(np.nan)
 
+def scatter(velocities, timestep, meanTime) :
+	scatterProb = 1 - np.exp(-1*timestep/meanTime)
+	for velocity in velocities :
+		if scatterProb > np.random.uniform(0,1) :
+			angle = np.random.uniform(0,2*np.pi)
+			velocity[0] = [vtherm*np.cos(angle),
+				vtherm*np.sin(angle)]
+
 def draw(plt, width, height, paths, edges) :
 	ax = plt.gca()
 	ax.set_xlim([0-width*0.5,width*1.5])
@@ -101,56 +111,18 @@ def draw(plt, width, height, paths, edges) :
 	plt.show()
 
 if __name__ == "__main__" :
-	numElectrons = 20
+	numElectrons = 4
+	timestep = 1
 
 	width = 200e-9
 	height = 100e-9
 	vtherm = 0.5e-9
 
-	edges = [[0.0,height,width/3,0.0],
-		[width/3,height,0.0,-height/4],
-		[width/3,3*height/4,width/9,-height/8],
-		[4*width/9,5*height/8,width/9,0.0],
-		[5*width/9,5*height/8,width/9,height/8],
-		[6*width/9,6*height/8,0.0,height/4],
-		[6*width/9,height,width/3,0.0],
-		[width,0.0,-width/3,0.0],
-		[2*width/3,0.0,0.0,height/4],
-		[2*width/3,height/4,-width/9,height/8],
-		[5*width/9,3*height/8,-width/9,0.0],
-		[4*width/9,3*height/8,-width/9,-height/8],
-		[3*width/9,2*height/8,0.0,-height/4],
-		[3*width/9,0.0,-width/3,0.0]]
-
-	polys = [[[width/3,height,0.0,-height/4],
-		[width/3,3*height/4,width/9,-height/8],
-		[4*width/9,5*height/8,width/9,0.0],
-		[5*width/9,5*height/8,width/9,height/8],
-		[6*width/9,6*height/8,0.0,height/4]],
-		[[2*width/3,0.0,0.0,height/4],
-		[2*width/3,height/4,-width/9,height/8],
-		[5*width/9,3*height/8,-width/9,0.0],
-		[4*width/9,3*height/8,-width/9,-height/8],
-		[3*width/9,2*height/8,0.0,-height/4]]]
-
-	wallPosTemp = []
-	wallVecTemp = []
-	for edge in edges :
-		wallPosTemp.append([edge[0:2]])
-		wallVecTemp.append([edge[2:4]])
-	wallPos = np.array(wallPosTemp)
-	wallVec = np.array(wallVecTemp)
-
-	wallNormTemp = []
-	for wall in wallVec :
-		length = np.sqrt(wall[0][0]**2 + wall[0][1]**2)
-		x = wall[0][1] / length
-		y = -1.0 * wall[0][0] / length
-		wallNormTemp.append([[x,y]])
-
-	wallNorm = np.array(wallNormTemp)
+	wallPos, wallVec, wallNorm, polys, edges = shapes.trapazoidBottleNeck(width,height)
 
 	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
 	for i in range(1000) :
+		scatter(velocity, 0.1, 10)
 		iterate(plt, position, velocity, wallPos, wallVec, wallNorm, path)
 	draw(plt, width, height, path, edges)
+
