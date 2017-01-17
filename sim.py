@@ -1,7 +1,10 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import shapes
+import time
+from matplotlib.animation import FuncAnimation
 
+MAX_PLOT_PATHS = 5
 
 def initElectrons(numElectrons, width, height, vtherm, polygons) :
 	tempPosition = []
@@ -25,7 +28,7 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 				vtherm*np.sin(angle)]])
 
 
-	for i in range(numElectrons) :
+	for i in range(min(numElectrons,MAX_PLOT_PATHS)) :
 		paths.append([[],[]])
 
 	return np.array(tempPosition), np.array(tempVelocity), paths
@@ -45,14 +48,14 @@ def isPointInPolys(polygons, point) :
 			
 	
 
-def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
+def iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm, path) :
 
 	# Collisions
 	w = np.tile(wallPos.reshape(1,len(wallPos),2), (len(position),1,1))
 	wv = np.tile(wallVec.reshape(1,len(wallVec),2), (len(position),1,1))
 
 	e = np.tile(position, (1,len(wallPos),1))
-	ev = np.tile(velocity, (1,len(wallPos),1))
+	ev = np.tile(velocity*timestep, (1,len(wallPos),1))
 	
 	t = np.cross(w - e, wv) / np.cross(ev, wv)
 	u = np.cross(w - e, ev) / np.cross(ev, wv)
@@ -65,15 +68,7 @@ def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 			if(mask[i][j] == 1):
 				velocity[i][0] = velocity[i][0] -  2*np.dot(velocity[i][0].reshape(1,2), wallNorm[j][0].reshape((2,1))) * wallNorm[j][0]
 
-	for i in range(0,len(t)) :
-		for j in range(len(t[0])) :
-			if(t[i][j] > 0 and t[i][j] < 1 and u[i][j] > 0 and u[i][j] < 1) :
-				x = position[i][0][0] + velocity[i][0][0] * t[i][j]
-				y = position[i][0][1] + velocity[i][0][1] * t[i][j]
-				#plt.plot([x,x], [y,y], 'x',markersize = 12)
-				plt.plot([x,x], [y,y])
-
-	position += velocity
+	position += velocity*timestep
 
 	# Right periodic boundry
 	rightMask = position[:,:,0] > width
@@ -82,7 +77,7 @@ def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 	leftMask = position[:,:,0] < 0
 	position[:,:,0] = (1-leftMask) * position[:,:,0] + leftMask * (width + position[:,:,0])
 
-	for i in range(0,len(position)) :
+	for i in range(0,min(len(position),MAX_PLOT_PATHS)) :
 		if ~leftMask[i] and ~rightMask[i]:
 			path[i][0].append(position[i][0][0])
 			path[i][1].append(position[i][0][1])
@@ -90,7 +85,7 @@ def iterate(plt,position, velocity, wallPos, wallVec, wallNorm, path) :
 			path[i][0].append(np.nan)
 			path[i][1].append(np.nan)
 
-def scatter(velocities, timestep, meanTime) :
+def scatter(vtherm, velocities, timestep, meanTime) :
 	scatterProb = 1 - np.exp(-1*timestep/meanTime)
 	for velocity in velocities :
 		if scatterProb > np.random.uniform(0,1) :
@@ -110,19 +105,78 @@ def draw(plt, width, height, paths, edges) :
 		plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=0.0, head_length=0.0, width = 0.01e-9, fc='k', ec='k')
 	plt.show()
 
-if __name__ == "__main__" :
-	numElectrons = 4
-	timestep = 1
+
+def heatMap(plt, width, height, positions) :
+	lastX = []
+	lastY = []
+	for position in positions :
+		# kinda a hack
+		if position[0][1] < height and position[0][1] > 0:
+			lastX.append(position[0][0])
+			lastY.append(position[0][1])
+
+	ax = plt.gca()
+	ax.set_xlim([0,width])
+	ax.set_ylim([0,height])
+
+	ax.hist2d(lastX,lastY,bins=30)
+	plt.show()
+
+def trivialExample(numElectrons, numIterations):	
+	start = time.clock()
+	timestep = 5e-15
 
 	width = 200e-9
 	height = 100e-9
-	vtherm = 0.5e-9
+	vtherm = 1.87e5
+
+	edges = [[0.0,height,width,0.0],[width,0.0,-width,0.0]]
+
+	wallPosTemp = []
+	wallVecTemp = []
+	for edge in edges :
+		wallPosTemp.append([edge[0:2]])
+		wallVecTemp.append([edge[2:4]])
+		wallPos = np.array(wallPosTemp)
+		wallVec = np.array(wallVecTemp)
+
+	wallNormTemp = []
+	for wall in wallVec :
+		length = np.sqrt(wall[0][0]**2 + wall[0][1]**2)
+		x = wall[0][1] / length
+		y = -1.0 * wall[0][0] / length
+		wallNormTemp.append([[x,y]])
+
+	wallNorm = np.array(wallNormTemp)	
+
+	polys = []
+
+
+	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
+	for i in range(numIterations) :
+		iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm, path)
+
+	print(time.clock() - start)
+	#draw(plt, width, height, path, edges)
+	heatMap(plt, width, height, position)
+
+def trapazoidExample(numElectrons, numIterations):	
+	timestep = 5e-15
+
+	width = 200e-9
+	height = 100e-9
+	vtherm = 1.87e5
+
 
 	wallPos, wallVec, wallNorm, polys, edges = shapes.trapazoidBottleNeck(width,height)
 
 	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
-	for i in range(1000) :
-		scatter(velocity, 0.1, 10)
-		iterate(plt, position, velocity, wallPos, wallVec, wallNorm, path)
+	for i in range(numIterations) :
+		scatter(vtherm, velocity, timestep, 0.2e-12)
+		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
 	draw(plt, width, height, path, edges)
+	heatMap(plt, width, height, position)	
 
+if __name__ == "__main__" :
+	#trivialExample(1000,1000)
+	trapazoidExample(100,1000)
