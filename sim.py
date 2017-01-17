@@ -119,7 +119,7 @@ def heatMap(plt, width, height, positions) :
 	ax.set_xlim([0,width])
 	ax.set_ylim([0,height])
 
-	ax.hist2d(lastX,lastY,bins=30)
+	ax.hist2d(lastX,lastY,bins=20)
 	plt.show()
 
 def trivialExample(numElectrons, numIterations):	
@@ -177,6 +177,22 @@ def trapazoidExample(numElectrons, numIterations):
 	draw(plt, width, height, path, edges)
 	heatMap(plt, width, height, position)	
 
+def squareExample(numElectrons, numIterations):	
+	timestep = 2e-15
+
+	width = 200e-9
+	height = 100e-9
+	vtherm = 1.87e5
+
+
+	wallPos, wallVec, wallNorm, polys, edges = shapes.squareBottleNeck(width,height)
+
+	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
+	for i in range(numIterations) :
+		scatter(vtherm, velocity, timestep, 0.2e-12)
+		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
+	draw(plt, width, height, path, edges)
+	heatMap(plt, width, height, position)	
 if __name__ == "__main__" :
 	#trivialExample(1000,1000)
-	trapazoidExample(100,1000)
+	squareExample(100,1000)
