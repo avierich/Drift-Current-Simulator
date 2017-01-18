@@ -45,7 +45,6 @@ def isPointInPolys(polygons, point) :
 				break
 		if inPoly : return True
 	return False
-			
 	
 
 def iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm, path) :
@@ -64,12 +63,10 @@ def iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm
 
 	wvn = np.tile(wallNorm.reshape(1,len(wallNorm),2), (len(velocity),1,1))
 
-	if(np.sum(mask) >= 1) :
-	
+	if(np.sum(mask) >= 1) :	
 		reflections = ev / timestep - 2 * wvn * np.inner(velocity, wallNorm).reshape((len(velocity),len(wallNorm),1))
 		maskedRefl = mask.reshape((len(velocity),len(wallNorm),1)) * reflections
 		compressedRefl = np.sum(maskedRefl, axis=1,).reshape(len(velocity),1,2)
-
 		invMask = np.sum(mask, axis=1,).reshape(len(velocity),1) < 1
 		velocity[:,0] = invMask*velocity[:,0] + compressedRefl[:,0]
 
@@ -111,7 +108,6 @@ def draw(plt, width, height, paths, edges) :
 		plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=0.0, head_length=0.0, width = 0.01e-9, fc='k', ec='k')
 	plt.show()
 
-
 def heatMap(plt, width, height, positions) :
 	lastX = []
 	lastY = []
@@ -128,78 +124,26 @@ def heatMap(plt, width, height, positions) :
 	ax.hist2d(lastX,lastY,bins=20)
 	plt.show()
 
-def trivialExample(numElectrons, numIterations):	
-	start = time.clock()
-	timestep = 5e-15
-
+def simulate(numElectrons, numIterations, world, scatterElectrons = True, showProgress = False) :
+	timestep = 2e-15
 	width = 200e-9
 	height = 100e-9
 	vtherm = 1.87e5
 
-	edges = [[0.0,height,width,0.0],[width,0.0,-width,0.0]]
 
-	wallPosTemp = []
-	wallVecTemp = []
-	for edge in edges :
-		wallPosTemp.append([edge[0:2]])
-		wallVecTemp.append([edge[2:4]])
-		wallPos = np.array(wallPosTemp)
-		wallVec = np.array(wallVecTemp)
-
-	wallNormTemp = []
-	for wall in wallVec :
-		length = np.sqrt(wall[0][0]**2 + wall[0][1]**2)
-		x = wall[0][1] / length
-		y = -1.0 * wall[0][0] / length
-		wallNormTemp.append([[x,y]])
-
-	wallNorm = np.array(wallNormTemp)	
-
-	polys = []
-
+	wallPos, wallVec, wallNorm, polys, edges = world(width,height)
 
 	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
 	for i in range(numIterations) :
-		iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm, path)
+		if scatterElectrons :
+			scatter(vtherm, velocity, timestep, 0.2e-12)
+		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
+		if showProgress :
+			print(i)
 
-	print(time.clock() - start)
-	#draw(plt, width, height, path, edges)
+	draw(plt, width, height, path, edges)
 	heatMap(plt, width, height, position)
 
-def trapazoidExample(numElectrons, numIterations):	
-	timestep = 5e-15
-
-	width = 200e-9
-	height = 100e-9
-	vtherm = 1.87e5
-
-
-	wallPos, wallVec, wallNorm, polys, edges = shapes.trapazoidBottleNeck(width,height)
-
-	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
-	for i in range(numIterations) :
-		scatter(vtherm, velocity, timestep, 0.2e-12)
-		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
-	draw(plt, width, height, path, edges)
-	heatMap(plt, width, height, position)	
-
-def squareExample(numElectrons, numIterations):	
-	timestep = 2e-15
-
-	width = 200e-9
-	height = 100e-9
-	vtherm = 1.87e5
-
-
-	wallPos, wallVec, wallNorm, polys, edges = shapes.squareBottleNeck(width,height)
-
-	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
-	for i in range(numIterations) :
-		scatter(vtherm, velocity, timestep, 0.2e-12)
-		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
-		#print(i)
-	draw(plt, width, height, path, edges)
-	heatMap(plt, width, height, position)	
 if __name__ == "__main__" :
-	#trivialExample(1000,1000)
-	squareExample(1000,1000)
+	simulate(100,1000,shapes.squareBottleNeck)
+
