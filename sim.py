@@ -61,12 +61,18 @@ def iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm
 	u = np.cross(w - e, ev) / np.cross(ev, wv)
 
 	mask = (t > 0) * (t < 1) * (u > 0) * (u < 1)
-	compressedMask = np.dot(mask, np.ones((len(mask[0]),1)))
 
-	for i in range(0, len(mask)) :
-		for j in range(0, len(mask[0])) :
-			if(mask[i][j] == 1):
-				velocity[i][0] = velocity[i][0] -  2*np.dot(velocity[i][0].reshape(1,2), wallNorm[j][0].reshape((2,1))) * wallNorm[j][0]
+	wvn = np.tile(wallNorm.reshape(1,len(wallNorm),2), (len(velocity),1,1))
+
+	if(np.sum(mask) >= 1) :
+	
+		reflections = ev / timestep - 2 * wvn * np.inner(velocity, wallNorm).reshape((len(velocity),len(wallNorm),1))
+		maskedRefl = mask.reshape((len(velocity),len(wallNorm),1)) * reflections
+		compressedRefl = np.sum(maskedRefl, axis=1,).reshape(len(velocity),1,2)
+
+		invMask = np.sum(mask, axis=1,).reshape(len(velocity),1) < 1
+		velocity[:,0] = invMask*velocity[:,0] + compressedRefl[:,0]
+
 
 	position += velocity*timestep
 
@@ -191,8 +197,9 @@ def squareExample(numElectrons, numIterations):
 	for i in range(numIterations) :
 		scatter(vtherm, velocity, timestep, 0.2e-12)
 		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
+		#print(i)
 	draw(plt, width, height, path, edges)
 	heatMap(plt, width, height, position)	
 if __name__ == "__main__" :
 	#trivialExample(1000,1000)
-	squareExample(100,1000)
+	squareExample(1000,1000)
