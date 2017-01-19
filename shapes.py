@@ -80,3 +80,48 @@ def squareBottleNeck(width, height) :
 		[2*width/5,2*height/5,0.0,-2*height/5]]]
 
 	return generateArrays(edges, polys)
+
+def parabolicFocus(width, height) :
+
+	edges = []
+	polys = []
+
+	f = lambda x: 1.0/(2.0*height)*(x-width/2.0)**2
+
+	numSegments = 20
+
+	edges.append([0.0,height/2,0.0,-height/2])
+	for i in range(numSegments,0,-1) :
+		x1 = float(i)*width/float(numSegments)
+		x2 = float(i-1)*width/float(numSegments)
+		y1 = f(x1)
+		y2 = f(x2)
+		edges.append([x1,y1,x2-x1,y2-y1])
+	edges.append([0.0,0.0,width,0.0])
+	edges.append([width,0.0,0.0,height/2])
+
+	polys.append(edges)
+
+	g = lambda x: -1.0/(2.0*height)*(x-width/2.0)**2 + height
+	
+	secondPoly = []
+	for i in range(numSegments) :
+		x1 = float(i)*width/float(numSegments)
+		x2 = float(i+1)*width/float(numSegments)
+		y1 = g(x1)
+		y2 = g(x2)
+		edges.append([x1,y1,x2-x1,y2-y1])
+		secondPoly.append([x1,y1,x2-x1,y2-y1])
+	edges.append([width,height/2,0.0,height/2])
+	edges.append([width,height,-width,0.0])
+	edges.append([0.0,height,0.0,-height/2])
+	secondPoly.append([width,height/2,0.0,height/2])
+	secondPoly.append([width,height,-width,0.0])
+	secondPoly.append([0.0,height,0.0,-height/2])
+
+	polys.append(secondPoly)
+
+	return generateArrays(edges, polys)
+
+		
+

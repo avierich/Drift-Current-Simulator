@@ -4,7 +4,7 @@ import shapes
 import time
 from matplotlib.animation import FuncAnimation
 
-MAX_PLOT_PATHS = 5
+MAX_PLOT_PATHS = 10
 
 def initElectrons(numElectrons, width, height, vtherm, polygons) :
 	tempPosition = []
@@ -26,6 +26,8 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 		angle = np.random.uniform(0,2*np.pi)
 		tempVelocity.append([[vtherm*np.cos(angle),
 				vtherm*np.sin(angle)]])
+#		tempVelocity.append([[0,
+#				vtherm*np.sin(angle)]])
 
 
 	for i in range(min(numElectrons,MAX_PLOT_PATHS)) :
@@ -34,17 +36,24 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
 	return np.array(tempPosition), np.array(tempVelocity), paths
 
 # This function checks if a given point lies in any of the given polygons
-def isPointInPolys(polygons, point) :
+def isPointInPolys(polygons,point):
 	for polygon in polygons :
-		inPoly = True
-		for wall in polygon :
-			originToPoint = np.array([point[0] - wall[0],point[1] - wall[1]])
-			wallVec = np.array([wall[3],-1*wall[2]])
-			if np.dot(originToPoint, wallVec) > 0 :
-				inPoly = False
-				break
-		if inPoly : return True
+		numIntersections = 0
+		for edge in polygon :
+			wallPos = np.array([edge[0], edge[1]])
+			wallVec = np.array([edge[2], edge[3]])
+			pointPos = np.array([-100e-9,-100e-9])
+			pointVec = np.array([point[0] + 100e-9, point[1] +100e-9])
+
+			t = np.cross(wallPos - pointPos, wallVec) / np.cross(pointVec, wallVec)
+			u = np.cross(wallPos - pointPos, pointVec) / np.cross(pointVec, wallVec)
+			
+			numIntersections += t > 0 and t < 1 and u > 0 and u < 1
+
+		if numIntersections % 2 :
+			return True
 	return False
+			
 	
 
 def iterate(plt, width, timestep, position, velocity, wallPos, wallVec, wallNorm, path) :
@@ -136,7 +145,7 @@ def simulate(numElectrons, numIterations, world, scatterElectrons = True, showPr
 	position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
 	for i in range(numIterations) :
 		if scatterElectrons :
-			scatter(vtherm, velocity, timestep, 0.2e-12)
+			scatter(vtherm, velocity, timestep, 1.2e-12)
 		iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
 		if showProgress :
 			print(i)
@@ -145,5 +154,5 @@ def simulate(numElectrons, numIterations, world, scatterElectrons = True, showPr
 	heatMap(plt, width, height, position)
 
 if __name__ == "__main__" :
-	simulate(100,1000,shapes.squareBottleNeck)
+	simulate(1000,1000,shapes.parabolicFocus,showProgress = True)
 
