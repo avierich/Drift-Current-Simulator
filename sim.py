@@ -8,6 +8,8 @@ T = 300
 m = 0.26 * 9.11e-31
 k = 1.38e-23
 
+meanpath = 0.2e-12
+
 MAX_PLOT_PATHS = 20
 
 def initElectrons(numElectrons, width, height, vtherm, polygons) :
@@ -178,7 +180,7 @@ def simulate(numElectrons, numIterations, world, scatterElectrons = True, showPr
     position, velocity, path = initElectrons(numElectrons, width, height, vtherm, polys)
     for i in range(numIterations) :
         if scatterElectrons :
-            scatter(vtherm, velocity, timestep, 1.2e-12)
+            scatter(vtherm, velocity, timestep, meanpath)
         iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
         measureTemperature(temperature, velocity)
         if showProgress :
@@ -190,5 +192,5 @@ def simulate(numElectrons, numIterations, world, scatterElectrons = True, showPr
     plotTemperature(plt, temperature)
 
 if __name__ == "__main__" :
-    simulate(1000,1000,shapes.squareBottleNeck,showProgress = True)
+    simulate(1000,1000,shapes.parabolicFocus,showProgress = True)
 

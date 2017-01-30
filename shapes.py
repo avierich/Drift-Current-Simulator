@@ -94,15 +94,15 @@ def parabolicFocus(width, height) :
 
     numSegments = 20
 
-    edges.append([0.0,height/2,0.0,-height/2])
+    edges.append([0.0,height/2,0.0,-height])
     for i in range(numSegments,0,-1) :
         x1 = float(i)*width/float(numSegments)
         x2 = float(i-1)*width/float(numSegments)
         y1 = f(x1)
         y2 = f(x2)
         edges.append([x1,y1,x2-x1,y2-y1])
-    edges.append([0.0,0.0,width,0.0])
-    edges.append([width,0.0,0.0,height/2])
+    edges.append([0.0,-height/2,width,0.0])
+    edges.append([width,-height/2,0.0,height])
 
     polys.append(edges)
 
@@ -116,12 +116,12 @@ def parabolicFocus(width, height) :
         y2 = g(x2)
         edges.append([x1,y1,x2-x1,y2-y1])
         secondPoly.append([x1,y1,x2-x1,y2-y1])
-    edges.append([width,height/2,0.0,height/2])
-    edges.append([width,height,-width,0.0])
-    edges.append([0.0,height,0.0,-height/2])
-    secondPoly.append([width,height/2,0.0,height/2])
-    secondPoly.append([width,height,-width,0.0])
-    secondPoly.append([0.0,height,0.0,-height/2])
+    edges.append([width,height/2,0.0,height])
+    edges.append([width,3*height/2,-width,0.0])
+    edges.append([0.0,3*height/2,0.0,-height])
+    secondPoly.append([width,height/2,0.0,height])
+    secondPoly.append([width,3*height/2,-width,0.0])
+    secondPoly.append([0.0,3*height/2,0.0,-height])
 
     polys.append(secondPoly)
 
