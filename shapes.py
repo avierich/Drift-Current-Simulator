@@ -49,12 +49,14 @@ def trapazoidBottleNeck(width, height) :
         [width/3,3*height/4,width/9,-height/8],
         [4*width/9,5*height/8,width/9,0.0],
         [5*width/9,5*height/8,width/9,height/8],
-        [6*width/9,6*height/8,0.0,height/4]],
+        [6*width/9,6*height/8,0.0,height/4],
+        [6*width/9,height,-width/3,0.0]],
         [[2*width/3,0.0,0.0,height/4],
         [2*width/3,height/4,-width/9,height/8],
         [5*width/9,3*height/8,-width/9,0.0],
         [4*width/9,3*height/8,-width/9,-height/8],
-        [3*width/9,2*height/8,0.0,-height/4]]]
+        [3*width/9,2*height/8,0.0,-height/4],
+        [3*width/9,0.0,width/3,0.0]]]
 
     return generateArrays(edges, polys)
 
@@ -74,10 +76,12 @@ def squareBottleNeck(width, height) :
 
     polys = [[[2*width/5,height,0.0,-2*height/5],
         [2*width/5,3*height/5,width/5,0],
-        [3*width/5,3*height/5,0,2*height/5]],
+        [3*width/5,3*height/5,0,2*height/5],
+        [3*width/5,height,-width/5,0.0]],
         [[3*width/5,0.0,0.0,2*height/2],
         [3*width/5,2*height/5,-width/5,0.0],
-        [2*width/5,2*height/5,0.0,-2*height/5]]]
+        [2*width/5,2*height/5,0.0,-2*height/5],
+        [2*width/5,0.0,width/5,0.0]]]
 
     return generateArrays(edges, polys)
 
