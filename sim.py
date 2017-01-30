@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
+import matplotlib.colors as mcolors
 import numpy as np
 import shapes
 import time
-from matplotlib.animation import FuncAnimation
 
-MAX_PLOT_PATHS = 10
+T = 300
+m = 0.26 * 9.11e-31
+k = 1.38e-23
+
+MAX_PLOT_PATHS = 20
 
 def initElectrons(numElectrons, width, height, vtherm, polygons) :
     tempPosition = []
@@ -23,11 +27,8 @@ def initElectrons(numElectrons, width, height, vtherm, polygons) :
                             attemptPos[1]]])
         
 
-        angle = np.random.uniform(0,2*np.pi)
-        tempVelocity.append([[vtherm*np.cos(angle),
-                vtherm*np.sin(angle)]])
-#       tempVelocity.append([[0,
-#               vtherm*np.sin(angle)]])
+        tempVelocity.append([[np.random.randn()*np.sqrt(k*T/m),
+                                np.random.randn()*np.sqrt(k*T/m)]])
 
 
     for i in range(min(numElectrons,MAX_PLOT_PATHS)) :
@@ -101,20 +102,21 @@ def scatter(vtherm, velocities, timestep, meanTime) :
     scatterProb = 1 - np.exp(-1*timestep/meanTime)
     for velocity in velocities :
         if scatterProb > np.random.uniform(0,1) :
-            angle = np.random.uniform(0,2*np.pi)
-            velocity[0] = [vtherm*np.cos(angle),
-                vtherm*np.sin(angle)]
+            velocity[0] = [np.random.randn()*np.sqrt(k*T/m),
+                np.random.randn()*np.sqrt(k*T/m)]
 
 def draw(plt, width, height, paths, edges) :
     ax = plt.gca()
-    ax.set_xlim([0-width*0.5,width*1.5])
-    ax.set_ylim([0-height*0.5,height*1.5])
+    ax.set_xlim([0,width])
+    ax.set_ylim([0,height])
 
     for path in paths :
         plt.plot(path[0], path[1])
     for edge in edges :
-        #plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=2e-9, head_length=5e-9, width = 0.01e-9, fc='k', ec='k')
         plt.arrow(edge[0], edge[1], edge[2], edge[3], head_width=0.0, head_length=0.0, width = 0.01e-9, fc='k', ec='k')
+    plt.title("Electron Paths")
+    plt.xlabel("X Position (m)")
+    plt.ylabel("Y Position (m)")
     plt.show()
 
 def heatMap(plt, width, height, positions) :
@@ -130,15 +132,46 @@ def heatMap(plt, width, height, positions) :
     ax.set_xlim([0,width])
     ax.set_ylim([0,height])
 
-    ax.hist2d(lastX,lastY,bins=20)
+    plt.hist2d(lastX,lastY,bins=20)
+    plt.colorbar(norm=mcolors.NoNorm)
+    plt.title("Final Electron Position")
+    plt.xlabel("X Position (m)")
+    plt.ylabel("Y Position (m)")
     plt.show()
+
+def velocityHistogram(plt, velocities) :
+    totalVelocity = []
+    for velocity in velocities :
+        totalVelocity.append((velocity[0][0]**2+velocity[0][1]**2)**0.5)
+
+    plt.hist(totalVelocity, 10)
+    plt.title("Final Electron Velocity")
+    plt.xlabel("Electron Velocity (m/s)")
+    plt.ylabel("Number of Electrons")
+    plt.ticklabel_format(style='sci', axis='x', scilimits=(0,0))
+    plt.show()
+
+def plotTemperature(plt, temperature):
+    plt.plot(temperature)
+    plt.title("Semiconductor Temperature")
+    plt.xlabel("Iteration Number")
+    plt.ylabel("Temperature (K)")
+    plt.show()
+
+def measureTemperature(temperatures, velocities):
+    temperature = 0
+    for velocity in velocities :
+        temperature += velocity[0][0]**2+velocity[0][1]**2
+
+    temperatures.append(temperature*m/(k*2*len(velocities)))
 
 def simulate(numElectrons, numIterations, world, scatterElectrons = True, showProgress = False) :
     timestep = 2e-15
     width = 200e-9
     height = 100e-9
-    vtherm = 1.87e5
+    vtherm = np.sqrt((2*k*T)/m)
 
+    temperature = []
 
     wallPos, wallVec, wallNorm, polys, edges = world(width,height)
 
@@ -147,12 +180,15 @@ def simulate(numElectrons, numIterations, world, scatterElectrons = True, showPr
         if scatterElectrons :
             scatter(vtherm, velocity, timestep, 1.2e-12)
         iterate(plt, width, timestep,  position, velocity, wallPos, wallVec, wallNorm, path)
+        measureTemperature(temperature, velocity)
         if showProgress :
             print(i)
 
     draw(plt, width, height, path, edges)
     heatMap(plt, width, height, position)
+    velocityHistogram(plt, velocity)
+    plotTemperature(plt, temperature)
 
 if __name__ == "__main__" :
-    simulate(1000,1000,shapes.parabolicFocus,showProgress = True)
+    simulate(1000,1000,shapes.squareBottleNeck,showProgress = True)
 
